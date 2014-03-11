@@ -11,3 +11,7 @@ Setup:
 	|----->ui (ui for user input)
 	+lib
 	+pIRC.py (main program)
+
+
+Reference:
+	-https://tools.ietf.org/html/rfc2812 (IRC Protocol)
