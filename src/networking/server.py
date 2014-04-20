@@ -42,7 +42,7 @@ class clientObject(object):
 class Server(object):
     def __init__(self):
         self.HOST = '0.0.0.0'
-        self.PORT = 8889
+        self.PORT = 8888
         self.BUFFSIZE = 1024
         print("Starting server at " + self.HOST + ":" + str(self.PORT))
         self.ADDRESS = (self.HOST,self.PORT)
@@ -52,6 +52,7 @@ class Server(object):
         self.serverSock.bind(self.ADDRESS)
         self.serverSock.listen(2)
         self.clientThread = clientThread(self)
+	self.clientThread.daemon = True
         self.clientThread.start()
         print("Waiting for connection..")
         while self.running:
