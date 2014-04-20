@@ -24,7 +24,10 @@ class clientThread(threading.Thread):
                     if message != None and message != "":
                         #Message should not be printed here for long term, for now it's useful for testing.
                         print message
-                        client.update(message)
+                        for node in self.clientList:
+                        	if node != client:
+                        		node.update(message)
+                        # client.update(message)
                 except socket.timeout:
                     print "Socket Timeout for " + str(client)
     
@@ -34,7 +37,7 @@ class clientObject(object):
         self.sock = clientInfo[0]
         self.address = clientInfo[1]
     def update(self,message):
-        self.sock.send("This message is from the server.\r\n".encode())
+        self.sock.send(message)
 
 class Server(object):
     def __init__(self):
