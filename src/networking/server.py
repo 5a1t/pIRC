@@ -26,7 +26,7 @@ class clientThread(threading.Thread):
                         print message
                         for node in self.clientList:
                         	if node != client:
-                        		node.update(message)
+                        		node.update(str(client.address) + ": " + message)
                         # client.update(message)
                 except socket.timeout:
                     print "Socket Timeout for " + str(client)
