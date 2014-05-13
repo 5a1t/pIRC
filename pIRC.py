@@ -2,6 +2,7 @@ from Tkinter import *
 from ttk import *
 import socket
 import thread
+import hashlib
 
 # P2P context communication poc
 # Thanks to https://github.com/siddharthasahu for base p2p code
@@ -19,8 +20,10 @@ class ChatClient(Frame):
     self.counter = 0
     
     self.display_list = []
-    self.store_list = []
+    self.store_list = dict()
     self.client_list = []
+    self.lasthash = 0
+    
   
   def initUI(self):
     self.root.title("Simple P2P Chat Client")
@@ -120,6 +123,17 @@ class ChatClient(Frame):
     self.handleAddClient(self.clientIPVar.get().replace(' ',''),int(self.clientPortVar.get().replace(' ','')))
     
 
+
+  def storeMessage(self, hash, message):
+      if hash in self.store_list:
+          self.store_list[hash].append(message)
+      else:
+          self.store_list[hash] = list();
+          self.store_list[hash].append(message);
+
+
+    
+    
   def handleAddClient(self, ip, port):
     if self.serverStatus == 0:
       self.setStatus("Set server address first")
@@ -142,20 +156,44 @@ class ChatClient(Frame):
         data = clientsoc.recv(self.buffsize)
         if not data:
             break
-        if (data[0] == '*'):
-                self.addChat("%s:%s" % clientaddr, data)
         if (data[0] == '@'):
                 index = data.find('|')
                 ip = data[1:index]
-                port = int(data[index+1:len(data)])
-                print "@message recieved " + ip + port
+                port = data[index+1:len(data)]
+                print "addip:" + ip
+                print "addport:" + port
                 self.handleAddClient(ip,port)
+        else:
+                index = data.find('|')
+                hash = data[0:index]
+                message = data[index+1:len(data)]
+                self.storeMessage(hash, message);
+                print "added "+ hash + " " + message;
+      #self.addChat("%s:%s" % clientaddr, data)
       except:
           break
     self.removeClient(clientsoc, clientaddr)
     clientsoc.close()
     self.setStatus("Client disconnected from %s:%s" % clientaddr)
+
+
+  #Checks waiting list for hashes 
+  def checkWaiting(self):
+      while 1:
+          self.checkLastHashDict(lasthash);
+                  
+ #recursively check message queue.                  
+ def checkLastHashDict(self, hash):
+       if hash in store_list:
+           for i in store_list[hash]:
+               self.addChat("someone else:%s" % i)
+                   lasthash = hashlib.sha256(i).hexdigest()
+                   checkLastHashDict(hashlib.sha256(i).hexdigest())
+                   store_list[hash].remove(i);
+           del store_list[last_hash]
+     
   
+  #Send messages to connected peers.
   def handleSendChat(self):
     if self.serverStatus == 0:
       self.setStatus("Set server address first")
@@ -165,7 +203,7 @@ class ChatClient(Frame):
         return
     self.addChat("me", msg)
     for client in self.allClients.keys():
-      client.send("" + msg)
+      client.send(lasthash + "|" + msg)
   
   def addChat(self, client, msg):
     self.receivedChats.config(state=NORMAL)
