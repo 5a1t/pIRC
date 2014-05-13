@@ -194,11 +194,14 @@ class ChatClient(Frame):
                   
  #recursively check message queue.                  
   def checkLastHashDict(self, hash):
+       hash = str(hash)
        if hash in self.store_list:
+           print "hash in store list"
            for i in self.store_list[hash]:
-               self.addChat("someone else:%s" % i)
-               self.lasthash = hashlib.sha256(self.lasthash + i).hexdigest()
-               checkLastHashDict(hashlib.sha256(i).hexdigest())
+               print "trying to print:" + i 
+               self.addChat("Message", i)
+               self.lasthash = hashlib.sha256(str(self.lasthash) + i).hexdigest()
+               self.checkLastHashDict(hashlib.sha256(i).hexdigest())
                self.store_list[hash].remove(i);
            del self.store_list[hash]
      
