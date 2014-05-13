@@ -14,6 +14,7 @@ from ttk import *
 import socket
 import thread
 import hashlib
+import time
 
 
 class ChatClient(Frame):
@@ -32,6 +33,7 @@ class ChatClient(Frame):
     self.store_list = dict()
     self.client_list = []
     self.lasthash = 0
+    self.lastmessage = ""
     
   
   def initUI(self):
@@ -200,6 +202,7 @@ class ChatClient(Frame):
            for i in self.store_list[hash]:
                print "trying to print:" + i 
                self.addChat("Message", i)
+               self.lastmessage = i;
                self.lasthash = hashlib.sha256(str(self.lasthash) + i).hexdigest()
                self.checkLastHashDict(hashlib.sha256(i).hexdigest())
                self.store_list[hash].remove(i);
@@ -214,10 +217,11 @@ class ChatClient(Frame):
     msg = self.chatVar.get().replace(' ','')
     if msg == '':
         return
-    self.addChat("me", msg)
+    #self.addChat("me", msg)
     for client in self.allClients.keys():
       client.send(str(self.lasthash) + "|" + msg)
-  
+    self.store_list[self.lasthash].append(msg);
+
   def addChat(self, client, msg):
     self.receivedChats.config(state=NORMAL)
     self.receivedChats.insert("end",client+": "+msg+"\n")
@@ -237,7 +241,19 @@ class ChatClient(Frame):
   def setStatus(self, msg):
     self.statusLabel.config(text=msg)
     print msg
-      
+
+
+    # Test function to determine convergence for node in network.
+    def testNetwork(self, msg_count):
+        start = time.time()
+        for x in range(0, msg_count):
+            for client in self.allClients.keys():
+                client.send(str(self.lasthash) + "|" + x)
+            self.store_list[self.lasthash].append(x);
+            while(self.lastmessage != msg_count):
+              end = time.time()
+        print "Elapsed test time for self node convergence:" + str(end - start)
+
 def main():
   root = Tk()
   app = ChatClient(root)
