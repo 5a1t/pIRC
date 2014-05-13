@@ -1,11 +1,20 @@
+# pIRC - Context sensitive distributed chat.
+# Authors: Rostislav Tsiomenko, Alexander Morrow
+# Date: 5/5/14
+#
+# Proof of concept chat application for context sensitive ordering using hash chains.
+# The application supports sending messages between any peers that have the application running using our
+# context aware implementation.
+#
+# P2P base code adopted from Siddhartha Sahu (http://siddharthasahu.in)
+
+
 from Tkinter import *
 from ttk import *
 import socket
 import thread
 import hashlib
 
-# P2P context communication poc
-# Thanks to https://github.com/siddharthasahu for base p2p code
 
 class ChatClient(Frame):
   
@@ -104,7 +113,7 @@ class ChatClient(Frame):
         self.setStatus("Server listening on %s:%s" % serveraddr)
         self.client_list.append(self.serverIPVar.get().replace(' ',''))
         thread.start_new_thread(self.listenClients,())
-        thread.start_new_thread(self.check)
+        thread.start_new_thread(self.checkWaiting,())
         self.serverStatus = 1
         self.name = self.nameVar.get().replace(' ','')
         if self.name == '':
@@ -181,17 +190,17 @@ class ChatClient(Frame):
   #Checks waiting list for hashes 
   def checkWaiting(self):
       while 1:
-          self.checkLastHashDict(lasthash);
+          self.checkLastHashDict(self.lasthash);
                   
  #recursively check message queue.                  
   def checkLastHashDict(self, hash):
-       if hash in store_list:
-           for i in store_list[hash]:
+       if hash in self.store_list:
+           for i in self.store_list[hash]:
                self.addChat("someone else:%s" % i)
-               lasthash = hashlib.sha256(i).hexdigest()
+               self.lasthash = hashlib.sha256(self.lasthash + i).hexdigest()
                checkLastHashDict(hashlib.sha256(i).hexdigest())
-               store_list[hash].remove(i);
-           del store_list[hash]
+               self.store_list[hash].remove(i);
+           del self.store_list[hash]
      
   
   #Send messages to connected peers.
@@ -204,7 +213,7 @@ class ChatClient(Frame):
         return
     self.addChat("me", msg)
     for client in self.allClients.keys():
-      client.send(lasthash + "|" + msg)
+      client.send(str(self.lasthash) + "|" + msg)
   
   def addChat(self, client, msg):
     self.receivedChats.config(state=NORMAL)
