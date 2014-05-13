@@ -214,13 +214,18 @@ class ChatClient(Frame):
     if self.serverStatus == 0:
       self.setStatus("Set server address first")
       return
-    msg = self.chatVar.get().replace(' ','')
+    msg = self.chatVar.get()
     if msg == '':
         return
     #self.addChat("me", msg)
     for client in self.allClients.keys():
       client.send(str(self.lasthash) + "|" + msg)
-    self.store_list[self.lasthash].append(msg);
+            
+    if str(self.lasthash) in self.store_list:
+        self.store_list[str(self.lasthash)].append(msg)
+    else:
+        self.store_list[str(self.lasthash)] = list();
+        self.store_list[str(self.lasthash)].append(msg);
 
   def addChat(self, client, msg):
     self.receivedChats.config(state=NORMAL)
@@ -249,7 +254,11 @@ class ChatClient(Frame):
         for x in range(0, msg_count):
             for client in self.allClients.keys():
                 client.send(str(self.lasthash) + "|" + x)
-            self.store_list[self.lasthash].append(x);
+            if str(self.lasthash) in self.store_list:
+                self.store_list[str(self.lasthash)].append(x)
+            else:
+                self.store_list[str(self.lasthash)] = list();
+                self.store_list[str(self.lasthash)].append(x);
             while(self.lastmessage != msg_count):
               end = time.time()
         print "Elapsed test time for self node convergence:" + str(end - start)
