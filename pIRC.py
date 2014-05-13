@@ -17,6 +17,10 @@ class ChatClient(Frame):
     self.buffsize = 1024
     self.allClients = {}
     self.counter = 0
+    
+    self.display_list = []
+    self.store_list = []
+    self.client_list = []
   
   def initUI(self):
     self.root.title("Simple P2P Chat Client")
@@ -53,7 +57,7 @@ class ChatClient(Frame):
     self.clientPortVar = StringVar()
     self.clientPortVar.set("10000")
     clientPortField = Entry(ipGroup, width=5, textvariable=self.clientPortVar)
-    clientSetButton = Button(ipGroup, text="Add", width=10, command=self.handleAddClient)
+    clientSetButton = Button(ipGroup, text="Add", width=10, command=self.handleAddClientWrapper)
     serverLabel.grid(row=0, column=0)
     nameField.grid(row=0, column=1)
     serverIPField.grid(row=0, column=2)
@@ -95,6 +99,7 @@ class ChatClient(Frame):
         self.serverSoc.bind(serveraddr)
         self.serverSoc.listen(5)
         self.setStatus("Server listening on %s:%s" % serveraddr)
+        self.client_list.append(self.serverIPVar.get().replace(' ',''))
         thread.start_new_thread(self.listenClients,())
         self.serverStatus = 1
         self.name = self.nameVar.get().replace(' ','')
@@ -110,20 +115,26 @@ class ChatClient(Frame):
       self.addClient(clientsoc, clientaddr)
       thread.start_new_thread(self.handleClientMessages, (clientsoc, clientaddr))
     self.serverSoc.close()
-  
-  def handleAddClient(self):
+
+  def handleAddClientWrapper(self):
+    self.handleAddClient(self.clientIPVar.get().replace(' ',''),int(self.clientPortVar.get().replace(' ','')))
+    
+
+  def handleAddClient(self, ip, port):
     if self.serverStatus == 0:
       self.setStatus("Set server address first")
       return
-    clientaddr = (self.clientIPVar.get().replace(' ',''), int(self.clientPortVar.get().replace(' ','')))
-    try:
-        clientsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        clientsoc.connect(clientaddr)
-        self.setStatus("Connected to client on %s:%s" % clientaddr)
-        self.addClient(clientsoc, clientaddr)
-        thread.start_new_thread(self.handleClientMessages, (clientsoc, clientaddr))
-    except:
-        self.setStatus("Error connecting to client")
+    clientaddr = (ip,port)
+    if ip not in self.client_list:
+          try:
+              self.client_list.append(ip)
+              clientsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+              clientsoc.connect(clientaddr)
+              self.setStatus("Connected to client on %s:%s" % clientaddr)
+              self.addClient(clientsoc, clientaddr)
+              thread.start_new_thread(self.handleClientMessages, (clientsoc, clientaddr))
+          except:
+              self.setStatus("Error connecting to client")
 
   def handleClientMessages(self, clientsoc, clientaddr):
     while 1:
@@ -131,7 +142,14 @@ class ChatClient(Frame):
         data = clientsoc.recv(self.buffsize)
         if not data:
             break
-        self.addChat("%s:%s" % clientaddr, data)
+        if (data[0] == '*'):
+                self.addChat("%s:%s" % clientaddr, data)
+        if (data[0] == '@'):
+                index = data.find('|')
+                ip = data[1:index]
+                port = int(data[index+1:len(data)])
+                print "@message recieved " + ip + port
+                self.handleAddClient(ip,port)
       except:
           break
     self.removeClient(clientsoc, clientaddr)
@@ -147,7 +165,7 @@ class ChatClient(Frame):
         return
     self.addChat("me", msg)
     for client in self.allClients.keys():
-      client.send(msg)
+      client.send("" + msg)
   
   def addChat(self, client, msg):
     self.receivedChats.config(state=NORMAL)
@@ -169,9 +187,7 @@ class ChatClient(Frame):
     self.statusLabel.config(text=msg)
     print msg
       
-def main():  
-  display_list = []
-  store_list = []
+def main():
   root = Tk()
   app = ChatClient(root)
   root.mainloop()  
