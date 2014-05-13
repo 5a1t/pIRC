@@ -104,6 +104,7 @@ class ChatClient(Frame):
         self.setStatus("Server listening on %s:%s" % serveraddr)
         self.client_list.append(self.serverIPVar.get().replace(' ',''))
         thread.start_new_thread(self.listenClients,())
+        thread.start_new_thread(self.check)
         self.serverStatus = 1
         self.name = self.nameVar.get().replace(' ','')
         if self.name == '':
@@ -132,7 +133,7 @@ class ChatClient(Frame):
           self.store_list[hash].append(message);
 
 
-    
+
     
   def handleAddClient(self, ip, port):
     if self.serverStatus == 0:
@@ -183,14 +184,14 @@ class ChatClient(Frame):
           self.checkLastHashDict(lasthash);
                   
  #recursively check message queue.                  
- def checkLastHashDict(self, hash):
+  def checkLastHashDict(self, hash):
        if hash in store_list:
            for i in store_list[hash]:
                self.addChat("someone else:%s" % i)
-                   lasthash = hashlib.sha256(i).hexdigest()
-                   checkLastHashDict(hashlib.sha256(i).hexdigest())
-                   store_list[hash].remove(i);
-           del store_list[last_hash]
+               lasthash = hashlib.sha256(i).hexdigest()
+               checkLastHashDict(hashlib.sha256(i).hexdigest())
+               store_list[hash].remove(i);
+           del store_list[hash]
      
   
   #Send messages to connected peers.
